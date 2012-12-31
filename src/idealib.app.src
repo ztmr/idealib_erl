@@ -1,0 +1,12 @@
+{application, idealib,
+ [
+  {description, "IDEA Library, the Erlang/OTP edition"},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { idealib_app, []}},
+  {env, []}
+ ]}.
