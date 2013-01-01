@@ -17,7 +17,7 @@ post_init (App, Fun, TimeOut) ->
 
 %% @doc INTERNAL PURPOSES ONLY (`post_init/3').
 post_init_internal (App, Fun, TimeOut) ->
-  ilib:info ("~p Waiting for `~p' application...~n", [self (), App]),
+  ilog:info ("~p Waiting for `~p' application...~n", [self (), App]),
   case proplists:is_defined (App, application:which_applications ()) of
     true -> Fun ();
     false ->
