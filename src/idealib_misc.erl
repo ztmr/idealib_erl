@@ -7,13 +7,7 @@
 %%
 
 -module (idealib_misc).
--export ([post_init/2, post_init/3]).
--compile ([
-  {nowarn_unused_function, [
-    %% We use it, but indirectly in spawn
-    {post_init_internal, 3}
-  ]}
-]).
+-export ([post_init/2, post_init/3, post_init_internal/3]).
 
 %% @doc Wait for the `App' to start and run `Fun' function finally.
 post_init (App, Fun) ->
@@ -21,6 +15,7 @@ post_init (App, Fun) ->
 post_init (App, Fun, TimeOut) ->
   spawn (?MODULE, post_init_internal, [App, Fun, TimeOut]).
 
+%% @doc INTERNAL PURPOSES ONLY (`post_init/3').
 post_init_internal (App, Fun, TimeOut) ->
   ilib:info ("~p Waiting for `~p' application...~n", [self (), App]),
   case proplists:is_defined (App, application:which_applications ()) of
