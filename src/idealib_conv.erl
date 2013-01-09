@@ -39,7 +39,6 @@ str2int (S, D) when is_list (S) ->
   % NOTE: what's the difference between
   % string:to_integer and erlang:list_to_integer?
   case catch (string:to_integer (S)) of
-    {'EXIT', _} -> D;
     {error, _}  -> D;
     {X, _}      -> X;
     _           -> D
@@ -67,8 +66,11 @@ str2float (S, _) when is_float (S) -> S;
 str2float ([$.|S], D) -> str2float ([$0,$.|S], D);
 str2float (S, D) when is_list (S) ->
   case catch (string:to_float (S)) of
-    {'EXIT',_} -> str2int (S, D) + 0.0;
-    {error, _} -> D;
+    {error, _} ->
+      case str2int (S) of
+        {error, _} -> D;
+        Value      -> Value + 0.0
+      end;
     {X, _}     -> X
   end;
 str2float (_, D) -> D.
@@ -112,7 +114,8 @@ str2float_test () ->
   ?assertEqual (-123.456, str2float ([$-,$1,$2,$3,$.,$4,$5,$6], error)),
 
   %% Get only the number on the beginning of the string
-  ?assertEqual (0.123, str2float ("0.123a.4.5.6.7.8", error)),
+  ?assertEqual (0.123, str2float ("0.123.4.5.6.7.8", error)),
+  ?assertEqual (123.0, str2float ("123", error)),
   ?assertEqual (-123.456, str2float ("-123.456b", error)),
 
   %% Errors due to non-integer string content
