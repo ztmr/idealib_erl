@@ -25,26 +25,28 @@ stop () -> application:stop (lager).
 
 dbg (Msg) -> debug (Msg).
 dbg (Msg, Args) -> debug (Msg, Args).
-debug (Msg) -> debug (Msg, []).
+debug (Msg) -> xlog (debug, Msg).
 debug (Msg, Args) -> xlog (debug, Msg, Args).
 
-info (Msg) -> info (Msg, []).
+info (Msg) -> xlog (info, Msg).
 info (Msg, Args) -> xlog (info, Msg, Args).
 
-notice (Msg) -> notice (Msg, []).
+notice (Msg) -> xlog (notice, Msg).
 notice (Msg, Args) -> xlog (notice, Msg, Args).
 
-warn (Msg) -> warn (Msg, []).
-warn (Msg, Args) -> xlog (warn, Msg, Args).
+warn (Msg) -> xlog (warning, Msg).
+warn (Msg, Args) -> xlog (warning, Msg, Args).
 warning (Msg) -> warn (Msg).
 warning (Msg, Args) -> warn (Msg, Args).
 
-err (Msg) -> err (Msg, []).
+err (Msg) -> xlog (error, Msg).
 err (Msg, Args) -> xlog (error, Msg, Args).
 error (Msg) -> err (Msg).
 error (Msg, Args) -> err (Msg, Args).
 
+xlog (Level, Msg) ->
+  lager:log (Level, [], Msg).
 xlog (Level, Msg, Args) ->
-  lager:Level (Msg, Args).
+  lager:log (Level, [], Msg, Args).
 
 %% vim: fdm=syntax:fdn=3:tw=74:ts=2:syn=erlang
