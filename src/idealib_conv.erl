@@ -9,10 +9,10 @@
 -module (idealib_conv).
 -export ([
   str2int/1, str2int/2, str2int0/1,
-  str2float/1, str2float/2, str2float0/1 %,
+  str2float/1, str2float/2, str2float0/1,
   %x2int/1,
   %x2float/1,
-  %x2str/1
+  x2str/1
 ]).
 
 %% XXX: Are we Unicode ready? NO! :-(
@@ -75,6 +75,21 @@ str2float (S, D) when is_list (S) ->
   end;
 str2float (_, D) -> D.
 
+x2str (undefined) -> [];
+x2str (T) when is_list (T) ->
+  case idealib_lists:is_utf_string (T) of
+    true -> T;
+    false -> x2str_fallback (T)
+  end;
+x2str (T) when is_atom (T) -> atom_to_list (T);
+x2str (T) when is_integer (T) -> integer_to_list (T);
+% NOTE: 256.99 -> 2.56990000000000009095e+02 (what is wrong!)
+% Let's fall all the floats to the slow and ugly io_lib/~p...
+%x2str (T) when is_float (T) -> float_to_list (T);
+x2str (T) -> x2str_fallback (T).
+
+x2str_fallback (T) -> lists:flatten (io_lib:format ("~p", [T])).
+
 
 %% EUnit Tests
 -ifdef (TEST).
@@ -126,6 +141,26 @@ str2float_test () ->
   ?assertEqual (error, str2float ([1,2,3,4], error)),
   ?assertEqual (error, str2float ({"123"}, error)),
   ?assertEqual (error, str2float ({-123}, error)),
+
+  ok.
+
+x2str_test () ->
+
+  %% Basic
+  ?assertEqual ("", x2str ([])),
+  ?assertEqual ("0.0", x2str (0.0)),
+  ?assertEqual ("123.456", x2str (123.456)),
+  ?assertEqual ("-123.456", x2str (-123.456)),
+  ?assertEqual ("-123.456", x2str ([$-,$1,$2,$3,$.,$4,$5,$6])),
+  ?assertEqual ([283,353,269,345,382,253,225,237,233], x2str ([283,353,269,345,382,253,225,237,233])),
+  ?assertEqual ("abc", x2str ("abc")),
+  ?assertEqual ("abc", x2str ([$a,$b,$c])),
+  ?assertEqual ("[1,2,3]", x2str ([1,2,3])),
+  ?assertEqual ("", x2str (undefined)),
+  ?assertEqual ("true", x2str (true)),
+  ?assertEqual ("false", x2str (false)),
+  ?assertEqual ("{ok,{the,{result,{is,1}}}}",
+    x2str ({ok, {the, {result, {is, 1}}}})),
 
   ok.
 

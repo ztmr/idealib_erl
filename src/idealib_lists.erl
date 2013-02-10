@@ -7,7 +7,12 @@
 %%
 
 -module (idealib_lists).
--export ([pad/3, lpad/3, rpad/3]).
+-export ([
+  pad/3, lpad/3, rpad/3,
+  is_ascii_printable/1,
+  is_ascii_string/1,
+  is_utf_string/1
+]).
 
 %% @equiv lpad/3
 pad (L, N, E) -> lpad (L, N, E).
@@ -27,6 +32,19 @@ lpad (L, N, M, E) when (N > 0) andalso (M > length (L)) ->
   lpad ([E|L], N-1, M, E);
 lpad (L, _, _, _) -> L. %% non-list fallback XXX (report error?)
 
+%% @doc Check if the `X' is printable ASCII character.
+is_ascii_printable (X) when X >= 32, X < 127 -> true;
+is_ascii_printable (_) -> false.
+
+%% @doc Check if the `L' list is printable ASCII string.
+%% Uses `is_ascii_printable' function.
+is_ascii_string (L) when is_list (L) -> lists:all (fun is_ascii_printable/1, L);
+is_ascii_string (_) -> false.
+
+%% @doc Check if the `L' list is printable Unicode string.
+is_utf_string (L) ->
+  io_lib:printable_unicode_list (L).
+
 
 %% EUnit Tests
 -ifdef (TEST).
@@ -44,6 +62,22 @@ padding_test () ->
   ?assertEqual ([1,2,3,4], pad ([1,2,3,4], 4, 0)),
   ?assertEqual ([1,2,3,4], pad ([1,2,3,4], 2, 0)),
   ?assertEqual ([1,2,3,4], pad ([1,2,3,4], 0, 0)),
+
+  ok.
+
+printable_test () ->
+
+  ?assertEqual (true, is_ascii_printable ($A)),
+  ?assertEqual (false, is_ascii_printable (0)),
+  ?assertEqual (false, is_ascii_printable ("č")),
+
+  ?assertEqual (true, is_ascii_string ([$A,$B,$C])),
+  ?assertEqual (false, is_ascii_string ([$A,$B,$C,0])),
+  ?assertEqual (false, is_ascii_string ({ok})),
+
+  ?assertEqual (true, is_utf_string ([$A,$B,$C])),
+  ?assertEqual (false, is_utf_string ([$A,$B,$C,0])),
+  ?assertEqual (true, is_utf_string ([283,353,269,345,382,253,225,237,233])),
 
   ok.
 
