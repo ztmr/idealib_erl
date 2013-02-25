@@ -64,6 +64,8 @@ str2float (S) -> str2float (S, {error, invalid_float}).
 str2float ([], D) -> D;
 str2float (S, _) when is_float (S) -> S;
 str2float ([$.|S], D) -> str2float ([$0,$.|S], D);
+str2float ([$-,$.|S], D) -> str2float ([$-,$0,$.|S], D);
+str2float ([$+,$.|S], D) -> str2float ([$0,$.|S], D);
 str2float (S, D) when is_list (S) ->
   case catch (string:to_float (S)) of
     {error, _} ->
@@ -132,6 +134,12 @@ str2float_test () ->
   ?assertEqual (0.123, str2float ("0.123.4.5.6.7.8", error)),
   ?assertEqual (123.0, str2float ("123", error)),
   ?assertEqual (-123.456, str2float ("-123.456b", error)),
+
+  %% Handle the MUMPS-like floats in ".123" and "-.123"
+  %% format what is the same as 0.123 and -0.123
+  ?assertEqual (0.123, str2float (".123", error)),
+  ?assertEqual (0.123, str2float ("+.123", error)),
+  ?assertEqual (-0.123, str2float ("-.123", error)),
 
   %% Errors due to non-integer string content
   ?assertEqual (error, str2float ("a123", error)),
