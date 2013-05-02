@@ -10,9 +10,13 @@
 -export ([
   str2int/1, str2int/2, str2int0/1,
   str2float/1, str2float/2, str2float0/1,
+
+  x2bool/1, x2bool/2, x2bool0/1, x2bool1/1,
   %x2int/1,
   %x2float/1,
-  x2str/1
+  x2str/1,
+
+  bool2str/1, bool2str/2, bool2str0/1, bool2str1/1
 ]).
 
 %% XXX: Are we Unicode ready? NO! :-(
@@ -31,8 +35,9 @@ str2int (S) -> str2int (S, {error, invalid_integer}).
 %% If it is not possible, fall back to
 %% the specified default value of `D'.
 %%
-%% XXX: what about error trapping
-%% performance implications?
+%% XXX: what about catch-error trapping
+%% performance implications? how significant
+%% is the penalty?
 str2int ([], D) -> D;
 str2int (S, _) when is_integer (S) -> S;
 str2int (S, D) when is_list (S) ->
@@ -44,6 +49,7 @@ str2int (S, D) when is_list (S) ->
     _           -> D
   end;
 str2int (_, D) -> D.
+
 
 %% @doc Convert a string `S' to float.
 %% If it is not possible, fall back to
@@ -59,8 +65,9 @@ str2float (S) -> str2float (S, {error, invalid_float}).
 %% If it is not possible, fall back to
 %% the specified default value of `D'.
 %%
-%% XXX: what about error trapping
-%% performance implications?
+%% XXX: what about catch-error trapping
+%% performance implications? how significant
+%% is the penalty?
 str2float ([], D) -> D;
 str2float (S, _) when is_float (S) -> S;
 str2float ([$.|S], D) -> str2float ([$0,$.|S], D);
@@ -76,6 +83,85 @@ str2float (S, D) when is_list (S) ->
     {X, _}     -> X
   end;
 str2float (_, D) -> D.
+
+
+%% @doc Convert value of `S' to a boolean value.
+%% If it is not possible, fall back to `false'.
+x2bool0 (S) ->
+  x2bool (S, false).
+
+%% @doc Convert value of `S' to a boolean value.
+%% If it is not possible, fall back to `true'.
+x2bool1 (S) ->
+  x2bool (S, true).
+
+%% @doc Convert value of `S' to boolean.
+%% If it is not possible, fall back to
+%% {error, invalid_boolean}.
+x2bool (S) -> x2bool (S, {error, invalid_boolean}).
+
+%% @doc Convert value of `S' to boolean.
+%% If it is not possible, fall back to
+%% the specified default value of `D'.
+
+%% Default fallback phase 1:
+x2bool ([], D) -> D;
+x2bool (undefined, D) -> D;
+
+%% Straightforward true/false representation:
+x2bool (0, _) -> false;
+x2bool (1, _) -> true;
+x2bool (0.0, _) -> false;
+x2bool (1.0, _) -> true;
+x2bool (false, _) -> false;
+x2bool (true, _) -> true;
+x2bool ("1", _) -> true;    %% x2bool_s optimization
+x2bool ("0", _) -> false;   %% x2bool_s optimization
+x2bool (S, D) when is_list (S) -> x2bool_s (string:to_lower (S), D);
+
+%% Default fallback phase 2:
+x2bool (_, D) -> D.
+
+%% String representations
+x2bool_s ("false", _) -> false;
+x2bool_s ("true", _) -> true;
+x2bool_s ("n", _) -> false;
+x2bool_s ("y", _) -> true;
+%% Double-trick:
+%% (1) str2float ("0") = str2float ("0.0") = 0.0 -> false;
+%% (2) str2float may return {error, _}, and x2bool ({error, _}, D) -> D.
+x2bool_s (X, D) -> x2bool (str2float (X), D).
+
+
+%% @doc Convert a boolean value `B' to a string.
+%% If it is not possible, fall back to `0'.
+%% Default string representation is true="1", false="0".
+bool2str0 (B) ->
+  bool2str (B, "0").
+
+%% @doc Convert a boolean value `B' to a string.
+%% If it is not possible, fall back to `1'.
+%% Default string representation is true="1", false="0".
+bool2str1 (B) ->
+  bool2str (B, "1").
+
+%% @doc Convert a boolean value `B' to a string.
+%% If it is not possible, fall back to
+%% {error, invalid_boolean}.
+%% Default string representation is true="1", false="0".
+bool2str (B) -> bool2str (B, {error, invalid_boolean}).
+
+%% @doc Convert a boolean value `B' to a string.
+%% If it is not possible, fall back to
+%% the specified default value of `D'.
+%% Default string representation is true="1", false="0".
+bool2str (true, _) -> "1";
+bool2str (false, _) -> "0";
+
+%% A little trick: x2bool may return {error, _} what fallbacks to D.
+bool2str ({error, _}, D) -> D;
+bool2str (B, D) -> bool2str (x2bool (B), D).
+
 
 x2str (undefined) -> [];
 x2str (T) when is_list (T) ->
@@ -152,6 +238,56 @@ str2float_test () ->
 
   ok.
 
+x2bool_test () ->
+
+  %% Basic
+  ?assertEqual (false, x2bool0 ([])),
+  ?assertEqual (true, x2bool1 (undefined)),
+  ?assertEqual (false, x2bool (0.0)),
+  ?assertEqual (false, x2bool0 (123.456)),
+  ?assertEqual (true, x2bool1 (123.456)),
+  ?assertEqual (true, x2bool (true)),
+  ?assertEqual (true, x2bool ("1")),
+  ?assertEqual (false, x2bool ("0")),
+  ?assertEqual (false, x2bool (0.0)),
+  ?assertEqual (true, x2bool (1.0)),
+  ?assertEqual ({error, invalid_boolean}, x2bool (123.456)),
+  ?assertEqual ({error, invalid_boolean}, x2bool ([])),
+  ?assertEqual ({error, invalid_boolean}, x2bool (undefined)),
+  ?assertEqual (false, x2bool ("N")),
+  ?assertEqual (true, x2bool ("Y")),
+  ?assertEqual (false, x2bool ("0", test)),
+  ?assertEqual (false, x2bool ("0.0", test)),
+  ?assertEqual (test, x2bool ("0.1", test)),
+  ?assertEqual (test, x2bool ("whatever", test)),
+
+  ok.
+
+bool2str_test () ->
+
+  %% Basic
+  ?assertEqual ("0", bool2str0 (false_liar)),
+  ?assertEqual ("1", bool2str1 (truly_liar)),
+  ?assertEqual ("0", bool2str (0.0)),
+  ?assertEqual ("0", bool2str0 (123.456)),
+  ?assertEqual ("1", bool2str1 (123.456)),
+  ?assertEqual ("1", bool2str (true)),
+  ?assertEqual ("1", bool2str ("1")),
+  ?assertEqual ("0", bool2str ("0")),
+  ?assertEqual ("0", bool2str (0.0)),
+  ?assertEqual ("1", bool2str (1.0)),
+  ?assertEqual ({error, invalid_boolean}, bool2str (123.456)),
+  ?assertEqual ({error, invalid_boolean}, bool2str ([])),
+  ?assertEqual ({error, invalid_boolean}, bool2str (undefined)),
+  ?assertEqual ("0", bool2str ("N")),
+  ?assertEqual ("1", bool2str ("Y")),
+  ?assertEqual ("0", bool2str ("0", test)),
+  ?assertEqual ("0", bool2str ("0.0", test)),
+  ?assertEqual (test, bool2str ("0.1", test)),
+  ?assertEqual (test, bool2str ("whatever", test)),
+
+  ok.
+
 x2str_test () ->
 
   %% Basic
@@ -160,7 +296,8 @@ x2str_test () ->
   ?assertEqual ("123.456", x2str (123.456)),
   ?assertEqual ("-123.456", x2str (-123.456)),
   ?assertEqual ("-123.456", x2str ([$-,$1,$2,$3,$.,$4,$5,$6])),
-  ?assertEqual ([283,353,269,345,382,253,225,237,233], x2str ([283,353,269,345,382,253,225,237,233])),
+  ?assertEqual ([283,353,269,345,382,253,225,237,233],
+         x2str ([283,353,269,345,382,253,225,237,233])),
   ?assertEqual ("abc", x2str ("abc")),
   ?assertEqual ("abc", x2str ([$a,$b,$c])),
   ?assertEqual ("[1,2,3]", x2str ([1,2,3])),
