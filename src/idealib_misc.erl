@@ -7,7 +7,7 @@
 %%
 
 -module (idealib_misc).
--export ([uuid4str/0, post_init/2, post_init/3, post_init_internal/3]).
+-export ([uuidv4str/0, post_init/2, post_init/3, post_init_internal/3]).
 
 %% @doc UUIDv4 string generator.
 uuidv4str () ->
