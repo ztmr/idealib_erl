@@ -15,8 +15,7 @@
   %% dates library usage: shifts and ranges
 ]).
 
--include ("deps/erlang_localtime/include/tz_database.hrl").
-%-include_lib ("tz_database.hrl").
+-include_lib ("tz_database.hrl").
 
 
 %% @doc Convert erlang:now () to microseconds integer.
