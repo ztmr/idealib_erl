@@ -12,9 +12,10 @@
   str2float/1, str2float/2, str2float0/1,
 
   x2bool/1, x2bool/2, x2bool0/1, x2bool1/1,
-  %x2int/1,
-  %x2float/1,
+  x2int0/1, x2int/2, x2float0/1, x2float/2,
   x2str/1,
+
+  int2float0/1, int2float/2,
 
   bool2str/1, bool2str/2, bool2str0/1, bool2str1/1
 ]).
@@ -68,6 +69,10 @@ str2float (S) -> str2float (S, {error, invalid_float}).
 %% XXX: what about catch-error trapping
 %% performance implications? how significant
 %% is the penalty?
+%%
+%% XXX: possible multiculture issues since the
+%% comma character is treated as a fullfeatured
+%% FP separator equivalent to the dot character.
 str2float ([], D) -> D;
 str2float (S, _) when is_float (S) -> S;
 str2float ([$.|S], D) -> str2float ([$0,$.|S], D);
@@ -177,6 +182,47 @@ x2str (T) when is_integer (T) -> integer_to_list (T);
 x2str (T) -> x2str_fallback (T).
 
 x2str_fallback (T) -> lists:flatten (io_lib:format ("~p", [T])).
+
+
+%% @doc Try to convert whatever to integer.
+%% If the number is float, only the integral part
+%% is used. That means two things:
+%%   * fractional part is loosed => irreversible operation
+%%   * if you want to round up/down the float,
+%%     use another functions shipped with this library
+x2int0 (X) -> x2int (X, 0).
+
+%% @doc Try to convert whatever to integer.
+%% If the number is float, only the integral part
+%% is used. That means two things:
+%%   * fractional part is loosed => irreversible operation
+%%   * if you want to round up/down the float,
+%%     use another functions shipped with this library
+x2int (X, _) when is_integer (X) -> X;
+x2int (X, _) when is_float (X) -> idealib_flops:integral (X);
+x2int (X, D) -> str2int (x2str (X), D).
+
+
+%% @doc Try to convert whatever to float.
+%% Default value is 0.0.
+x2float0 (X) -> x2float (X, 0.0).
+
+%% @doc Try to convert whatever to float with optional fallback value.
+x2float (X, _) when is_float (X) -> X;
+x2float (X, D) when is_integer (X) -> int2float (X, D);
+x2float (X, D) -> str2float (x2str (X), D).
+
+
+%% XXX: To be moved to idealib_flops...
+
+%% @doc Convert integer to float.
+%% Fall back to zero.
+int2float0 (X) -> int2float (X, 0.0).
+
+%% @doc Convert integer to float.
+%% XXX: what's the difference to erlang:float (X)?
+int2float (X, _) when is_integer (X) -> X+0.0;  %% trick :)
+int2float (_, D) -> D.
 
 
 %% EUnit Tests
@@ -306,6 +352,50 @@ x2str_test () ->
   ?assertEqual ("false", x2str (false)),
   ?assertEqual ("{ok,{the,{result,{is,1}}}}",
     x2str ({ok, {the, {result, {is, 1}}}})),
+
+  ok.
+
+x2int_test () ->
+
+  %% Basic
+  ?assertEqual (0, x2int0 (0)),
+  ?assertEqual (0, x2int0 ([])),
+  ?assertEqual (0, x2int0 ("0")),
+  ?assertEqual (0, x2int0 ("0.1")),
+  ?assertEqual (0, x2int0 (0.1)),
+  ?assertEqual (0, x2int0 ("0,1")),
+  ?assertEqual (error, x2int ([], error)),
+  ?assertEqual (1, x2int (1.0, error)),
+
+  ok.
+
+x2float_test () ->
+
+  %% Basic
+  ?assertEqual (0.0, x2float0 (0)),
+  ?assertEqual (0.0, x2float0 ([])),
+  ?assertEqual (0.0, x2float0 ("0")),
+  ?assertEqual (0.1, x2float0 ("0.1")),
+  ?assertEqual (0.1, x2float0 (0.1)),
+  ?assertEqual (0.1, x2float0 ("0,1")), %% XXX: should depend on culture!!
+  ?assertEqual (error, x2float ([], error)),
+  ?assertEqual (1.2, x2float (1.2, error)),
+
+  ok.
+
+int2float_test () ->
+
+  %% Basic
+  ?assertEqual (0.0, int2float0 (0)),
+  ?assertEqual (1.0, int2float0 (1)),
+  ?assertEqual (0.0, int2float0 ("1")),
+  ?assertEqual (0.0, int2float0 ("0")),
+  ?assertEqual (0.0, int2float0 ("0.1")),
+  ?assertEqual (0.0, int2float0 (0.1)),
+  ?assertEqual (0.0, int2float0 ("0,1")),
+  ?assertEqual (error, int2float ([], error)),
+  ?assertEqual (1.0, int2float (1, error)),
+  ?assertEqual (error, int2float (1.0, error)),
 
   ok.
 
