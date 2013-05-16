@@ -7,7 +7,12 @@
 %%
 
 -module (idealib_misc).
--export ([uuidv4str/0, post_init/2, post_init/3, post_init_internal/3]).
+-export ([
+  uuidv4str/0,
+  re_esc/1,
+  get_priv_dir_item/2,
+  post_init/2, post_init/3, post_init_internal/3
+]).
 
 %% @doc UUIDv4 string generator.
 uuidv4str () ->
@@ -18,6 +23,25 @@ uuidv4str () ->
   lists:flatten (io_lib:format (
     "~8.16.0b-~4.16.0b-~4.16.0b-~4.16.0b-~12.16.0b",
     [Ux0, Ux1, Ux2, Ux3, Ux4])).
+
+%% @doc regex pattern escaper.
+re_esc ({re_pattern, _} = Pat) -> Pat;
+re_esc ([]) -> [];
+re_esc ([H|T]) when H >= $0, H =< $9; H >= $a, H =< $z; H >= $A, H =< $Z ->
+  [H|re_esc (T)];
+re_esc ([H|T]) -> [$\\, H|re_esc (T)].
+
+%% @doc Get full path of item stored in private directory.
+get_priv_dir_item (App, Name) ->
+  case code:priv_dir (App) of
+    {error, bad_name} ->
+      case filelib:is_dir (filename:join (["..", priv])) of
+        true -> filename:join (["..", priv, Name]);
+        _    -> filename:join ([priv, Name])
+      end;
+    Dir -> filename:join (Dir, Name)
+  end.
+
 
 %% @doc Wait for the `App' to start and run `Fun' function finally.
 post_init (App, Fun) ->

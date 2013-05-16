@@ -9,6 +9,7 @@
 -module (idealib_lists).
 -export ([
   pad/3, lpad/3, rpad/3,
+  xzip/2,
   is_ascii_printable/1,
   is_ascii_string/1,
   is_utf_string/1
@@ -31,6 +32,14 @@ lpad (L, N, E) when is_list (L), is_integer (N) ->
 lpad (L, N, M, E) when (N > 0) andalso (M > length (L)) ->
   lpad ([E|L], N-1, M, E);
 lpad (L, _, _, _) -> L. %% non-list fallback XXX (report error?)
+
+%% @doc lists:zip for lists of unequal length.
+xzip (L1, L2) -> xzip (L1, L2, []).
+
+xzip ([], _, Acc) -> Acc;
+xzip (_, [], Acc) -> Acc;
+xzip ([H1|T1], [H2|T2], Acc) ->
+  xzip (T1, T2, [{H1, H2}|Acc]).
 
 %% @doc Check if the `X' is printable ASCII character.
 is_ascii_printable (X) when X >= 32, X < 127 -> true;
@@ -62,6 +71,17 @@ padding_test () ->
   ?assertEqual ([1,2,3,4], pad ([1,2,3,4], 4, 0)),
   ?assertEqual ([1,2,3,4], pad ([1,2,3,4], 2, 0)),
   ?assertEqual ([1,2,3,4], pad ([1,2,3,4], 0, 0)),
+
+  ok.
+
+xzip_test () ->
+
+  ?assertEqual ([{b, 2}, {a, 1}], xzip ([a, b], [1, 2])),
+  ?assertEqual ([{a, 1}], xzip ([a, b], [1])),
+  ?assertEqual ([{a, 1}], xzip ([a], [1, 2])),
+  ?assertEqual ([], xzip ([], [])),
+  ?assertEqual ([], xzip ([a, b], [])),
+  ?assertEqual ([], xzip ([], [1, 2])),
 
   ok.
 
