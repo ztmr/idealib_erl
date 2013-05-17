@@ -10,7 +10,7 @@ piece (S, D) -> epiece_nif:piece (S, D).
 %% ```
 %% erl> piece ("a|b|c", "|", [foo, bar, zoo])
 %% [{zoo, "c"}, {bar, "b"}, {foo, "a"}]
-%% ```
+%% '''
 piece ([], _, _) -> [];
 piece (_, _, []) -> [];
 piece (S, D, F) when is_list (S) ->
