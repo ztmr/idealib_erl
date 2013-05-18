@@ -41,26 +41,43 @@ NIF (piece) {
   char input [EPIECE$MAXINPUT];
   char delim [EPIECE$MAXDELIM];
   ERL_NIF_TERM result [EPIECE$MAXITEMS];
-  unsigned itemCnt;
 
-  if (enif_get_string (env, argv [0], input, EPIECE$MAXINPUT, ERL_NIF_LATIN1) < 0)
-    return enif_make_badarg (env);
+  int dataLen = enif_get_string (env, argv [0], input, EPIECE$MAXINPUT, ERL_NIF_LATIN1);
+  if (dataLen-- < 0) return enif_make_badarg (env);
 
-  if (enif_get_string (env, argv [1], delim, EPIECE$MAXDELIM, ERL_NIF_LATIN1) < 0)
-    return enif_make_badarg (env);
+  int delimLen = enif_get_string (env, argv [1], delim, EPIECE$MAXDELIM, ERL_NIF_LATIN1);
+  if (delimLen-- < 0) return enif_make_badarg (env);
 
-  char * pos_ptr,
-       * start_ptr = input,
-       * token;
-  for (itemCnt = 0;
-       itemCnt < EPIECE$MAXITEMS &&
-       pos_ptr < input+EPIECE$MAXINPUT; start_ptr = NULL) {
-    token = strtok_r (start_ptr, delim, &pos_ptr);
-    if (token == NULL) break;
-    result [itemCnt++] = enif_make_string (env, token, ERL_NIF_LATIN1);
+  unsigned n;
+  int j, bufLen;
+  bool delimFollows = false;
+  char buf [256], *pos, *data;
+  for (n = 0, buf [0] = 0, data = input, pos = data,
+       bufLen = 0; pos <= data+dataLen; ) {
+
+    // Look forward and try to find delimiter
+    for (j = 0, delimFollows = true; j < delimLen; j++)
+      if (!*(pos+j) || *(pos+j) != delim [j])
+        { delimFollows = false; break; }
+
+    // If we're before delimiter, print what we've gathered
+    // until now and continue after the delimiter
+    if (delimFollows) {
+      result [n++] = enif_make_string (env, buf, ERL_NIF_LATIN1);
+      bufLen = 0; buf [0] = 0; pos += delimLen;
+    }
+    else {
+      // Collect input bytes one by one
+      buf [bufLen++] = *pos++;
+      buf [bufLen]   = 0;
+    }
   }
 
-  return enif_make_list_from_array (env, result, itemCnt);
+  // If we're at the end of input data, just print
+  // what remains in the buffer
+  result [n++] = enif_make_string (env, buf, ERL_NIF_LATIN1);
+
+  return enif_make_list_from_array (env, result, n);
 }
 
 static ErlNifFunc nif_funcs [] = {
