@@ -42,6 +42,7 @@
   us2now/1, us2dt/1,
   gsec2dt/1, gsec2now/1,
 
+  dt2horolog/1, horolog2dt/1,
   gsec2horolog/1, horolog2gsec/1,
 
   epoch2gsec/1,
@@ -120,6 +121,12 @@ gsec2now (S) when is_integer (S) ->
 %% @doc Convert gregorian seconds to datetime tuple.
 gsec2dt (S) -> now2dt (gsec2now (S)).
 
+%% @doc Convert date-time tuple to MUMPS $Horolog.
+dt2horolog (S) -> gsec2horolog (dt2gsec (S)).
+
+%% @doc Convert MUMPS $Horolog to date-time tuple.
+horolog2dt (S) -> gsec2dt (horolog2gsec (S)).
+
 %% @doc Convert Gregorian seconds to MUMPS $Horolog.
 gsec2horolog (S) when is_integer (S) ->
   DaySec = days2sec (1),
@@ -181,8 +188,8 @@ horolog_test () ->
   ?assertEqual (epoch2gsec (mumps)+60, horolog2gsec ({0,60})),
   ?assertEqual (epoch2gsec (mumps)+DaySecs, horolog2gsec ({1,0})),
   ?assertEqual (GSecs, horolog2gsec (gsec2horolog (GSecs))),
-  ?assertEqual ({{2013,5,17}, {13,54,18}}, gsec2dt (horolog2gsec (Horo1))),
-  ?assertEqual ({{2013,5,17}, {13,54,18}}, gsec2dt (horolog2gsec (Horo2))),
+  ?assertEqual ({{2013,5,17}, {13,54,18}}, horolog2dt (Horo1)),
+  ?assertEqual ({{2013,5,17}, {13,54,18}}, horolog2dt (Horo2)),
   ok.
 
 epoch_test () ->
