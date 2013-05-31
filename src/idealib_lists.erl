@@ -10,6 +10,7 @@
 -export ([
   pad/3, lpad/3, rpad/3,
   xzip/2,
+  compare/2,
   is_ascii_printable/1,
   is_ascii_string/1,
   is_utf_string/1
@@ -40,6 +41,15 @@ xzip ([], _, Acc) -> Acc;
 xzip (_, [], Acc) -> Acc;
 xzip ([H1|T1], [H2|T2], Acc) ->
   xzip (T1, T2, [{H1, H2}|Acc]).
+
+%% @doc Return the length of the longest common prefix.
+compare (L1, L2) -> compare (L1, L2, 0).
+
+compare ([], _, Ctr) -> Ctr;
+compare (_, [], Ctr) -> Ctr;
+compare ([H1|T1], [H2|T2], Ctr) when H1 =:= H2 ->
+  compare (T1, T2, Ctr+1);
+compare (_, _, Ctr) -> Ctr.
 
 %% @doc Check if the `X' is printable ASCII character.
 is_ascii_printable (X) when X >= 32, X < 127 -> true;
@@ -98,6 +108,16 @@ printable_test () ->
   ?assertEqual (true, is_utf_string ([$A,$B,$C])),
   ?assertEqual (false, is_utf_string ([$A,$B,$C,0])),
   ?assertEqual (true, is_utf_string ([283,353,269,345,382,253,225,237,233])),
+
+  ok.
+
+compare_test () ->
+
+  ?assertEqual (4, compare ("idea", "ideal")),
+  ?assertEqual (3, compare ("erlang", "erl")),
+  ?assertEqual (0, compare ("mumps", "")),
+  ?assertEqual (0, compare ("", "")),
+  ?assertEqual (0, compare ("idea", "aedi")),
 
   ok.
 
