@@ -42,6 +42,8 @@
   us2now/1, us2dt/1,
   gsec2dt/1, gsec2now/1,
 
+  dt2iso/1, iso2dt/1,
+
   dt2horolog/1, horolog2dt/1,
   gsec2horolog/1, horolog2gsec/1,
 
@@ -162,6 +164,27 @@ dt2local ({{_, _, _}, {_, _, _}} = DT, Tz) ->
 now2local ({_, _, _} = Now, Tz) ->
   dt2local (now2dt (Now), Tz).
 
+dt2iso ({{Year, Month, Day}, {Hr, Min, Sec}}) ->
+  S = fun (X, L) ->
+    idealib_lists:pad (idealib_conv:x2str (X), L, $0)
+  end,
+  lists:concat ([
+    S (Year,  4), "-",
+    S (Month, 2), "-",
+    S (Day,   2), "T",
+    S (Hr,    2), ":",
+    S (Min,   2), ":",
+    S (Sec,   2), "Z" ]).
+
+%% XXX: Ignores zone!
+iso2dt (IsoString) when is_list (IsoString) ->
+  [D, Tz] = epiece:piece (IsoString, [$T]),
+  [T, _Z] = epiece:piece (Tz, [$Z]),
+  D@ = list_to_tuple ([ idealib_conv:str2int0 (X)
+                        || X <- epiece:piece (D, [$-]) ]),
+  T@ = list_to_tuple ([ idealib_conv:str2int0 (X)
+                        || X <- epiece:piece (T, [$:]) ]),
+  {D@, T@}.
 
 %% EUnit Tests
 -ifdef (TEST).
@@ -196,6 +219,13 @@ epoch_test () ->
   ?assertEqual (dt2gsec ({{1970, 1, 1},{0,0,0}}), epoch2gsec (unix)),
   ?assertEqual (dt2gsec ({{1840,12,31},{0,0,0}}), epoch2gsec (mumps)),
   ?assertEqual (dt2gsec ({{1858,11,17},{0,0,0}}), epoch2gsec (vms)),
+  ok.
+
+dtiso_test () ->
+  ?assertEqual ("2013-01-01T01:02:03Z", dt2iso ({{2013,1,1},{1,2,3}})),
+  ?assertEqual ({{2013,1,1},{1,2,3}}, iso2dt ("2013-01-01T01:02:03Z")),
+  NowDT = {date (), time ()},
+  ?assertEqual (NowDT, iso2dt (dt2iso (NowDT))),
   ok.
 
 -endif.
