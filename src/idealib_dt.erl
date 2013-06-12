@@ -44,7 +44,7 @@
 
   dt2iso/1, iso2dt/1,
 
-  dt2horolog/1, horolog2dt/1,
+  dt2horolog/1, horolog2dt/1, horolog2str/1,
   gsec2horolog/1, horolog2gsec/1,
 
   epoch2gsec/1,
@@ -147,6 +147,10 @@ horolog2gsec (H) when is_list (H) ->
     _        -> 0
   end.
 
+%% @doc Convert $Horolog tuple to $H string
+horolog2str ({HD,HS}) ->
+  idealib_conv:x2str (HD) ++ "," ++ idealib_conv:x2str (HS).
+
 %% @doc List of all the available TimeZones.
 timezones () ->
   proplists:get_keys (?tz_database).
@@ -213,6 +217,7 @@ horolog_test () ->
   ?assertEqual (GSecs, horolog2gsec (gsec2horolog (GSecs))),
   ?assertEqual ({{2013,5,17}, {13,54,18}}, horolog2dt (Horo1)),
   ?assertEqual ({{2013,5,17}, {13,54,18}}, horolog2dt (Horo2)),
+  ?assertEqual (Horo1, horolog2str (Horo2)),
   ok.
 
 epoch_test () ->
