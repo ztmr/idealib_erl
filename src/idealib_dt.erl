@@ -44,7 +44,8 @@
 
   dt2iso/1, iso2dt/1,
 
-  dt2horolog/1, horolog2dt/1, horolog2str/1,
+  dt2horolog/1, dt2horologstr/1,
+  horolog2dt/1, horolog2str/1,
   gsec2horolog/1, horolog2gsec/1,
 
   epoch2gsec/1,
@@ -147,9 +148,13 @@ horolog2gsec (H) when is_list (H) ->
     _        -> 0
   end.
 
-%% @doc Convert $Horolog tuple to $H string
+%% @doc Convert $Horolog tuple to $H string.
 horolog2str ({HD,HS}) ->
   idealib_conv:x2str (HD) ++ "," ++ idealib_conv:x2str (HS).
+
+%% @doc Convert Erlang DateTime to $H string.
+dt2horologstr (D) ->
+  horolog2str (dt2horolog (D)).
 
 %% @doc List of all the available TimeZones.
 timezones () ->
@@ -211,13 +216,15 @@ horolog_test () ->
   GSecs = round (now2us ({1,1,0}) / 1000000) - epoch2gsec (unix),
   DaySecs = idealib_dt:days2sec (1),
   Horo1 = "62959,50058", Horo2 = {62959, 50058},
+  DT = {{2013,5,17}, {13,54,18}},
   ?assertEqual (epoch2gsec (mumps), horolog2gsec ({0,0})),
   ?assertEqual (epoch2gsec (mumps)+60, horolog2gsec ({0,60})),
   ?assertEqual (epoch2gsec (mumps)+DaySecs, horolog2gsec ({1,0})),
   ?assertEqual (GSecs, horolog2gsec (gsec2horolog (GSecs))),
-  ?assertEqual ({{2013,5,17}, {13,54,18}}, horolog2dt (Horo1)),
-  ?assertEqual ({{2013,5,17}, {13,54,18}}, horolog2dt (Horo2)),
+  ?assertEqual (DT, horolog2dt (Horo1)),
+  ?assertEqual (DT, horolog2dt (Horo2)),
   ?assertEqual (Horo1, horolog2str (Horo2)),
+  ?assertEqual (Horo1, dt2horologstr (DT)),
   ok.
 
 epoch_test () ->
