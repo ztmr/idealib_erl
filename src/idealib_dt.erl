@@ -49,9 +49,11 @@
   gsec2horolog/1, horolog2gsec/1,
 
   epoch2gsec/1,
-  now2local/2, dt2local/2, timezones/0
+  now2local/2, dt2local/2, timezones/0,
   %% TODO: ISO timestamps
   %% dates library usage: shifts and ranges
+
+  dt_compare/2
 ]).
 
 -include_lib ("tz_database.hrl").
@@ -195,6 +197,12 @@ iso2dt (IsoString) when is_list (IsoString) ->
                         || X <- epiece:piece (T, [$:]) ]),
   {D@, T@}.
 
+%% @doc True if DateTime `DT1' is before DateTime `DT2'.
+%% False otherwise.
+dt_compare (DT1, DT2) ->
+  dt2gsec (DT1) < dt2gsec (DT2).
+
+
 %% EUnit Tests
 -ifdef (TEST).
 -include_lib ("eunit/include/eunit.hrl").
@@ -208,6 +216,13 @@ common_test () ->
   ?assertEqual (DT, us2dt (dt2us (DT))),
   ?assertEqual (DTSec, dt2gsec (us2dt (dt2us (DT)))),
   ?assertEqual (DTSec+R, dt2gsec (us2dt (dt2us (DT)+R*1000000))),
+  ok.
+
+compare_test () ->
+  ?assertEqual (true, dt_compare ({{2013,1,1},{1,2,3}}, {{2013,1,1}, {4,5,6}})),
+  ?assertEqual (false, dt_compare ({{2013,1,1},{1,2,3}}, {{2012,1,1}, {4,5,6}})),
+  ?assertEqual (true, dt_compare ({{2012,1,1},{1,2,3}}, {{2013,1,1}, {4,5,6}})),
+  ?assertEqual (false, dt_compare ({{2012,1,1},{1,2,3}}, {{2012,1,1}, {1,2,3}})),
   ok.
 
 horolog_test () ->
