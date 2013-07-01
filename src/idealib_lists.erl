@@ -11,6 +11,7 @@
   pad/3, lpad/3, rpad/3,
   xzip/2,
   compare/2,
+  group_by/2,
   index_of/2,
   is_ascii_printable/1,
   is_ascii_string/1,
@@ -51,6 +52,23 @@ compare (_, [], Ctr) -> Ctr;
 compare ([H1|T1], [H2|T2], Ctr) when H1 =:= H2 ->
   compare (T1, T2, Ctr+1);
 compare (_, _, Ctr) -> Ctr.
+
+%% @doc Break up the `List' into `KeyFun'-generated equivalency classes.
+%% Example:
+%% ```
+%%   erl> KeyFun = fun (X) -> X rem 4 end.
+%%   erl> idealib_lists:group_by (KeyFun, lists:seq (1, 18)).
+%%   [{0,[4,8,12,16]},
+%%    {3,[3,7,11,15]},
+%%    {2,[2,6,10,14,18]},
+%%    {1,[1,5,9,13,17]}]
+%% ```
+group_by (KeyFun, List) ->
+  F = fun (X, D) ->
+        D:append (KeyFun (X), X)
+      end,
+  R = lists:foldl (F, dict:new (), List),
+  R:to_list ().
 
 %% @doc Find position of the element `E' in list `L'.
 index_of (E, L) when is_list (L) ->
@@ -139,6 +157,18 @@ compare_test () ->
   ?assertEqual (0, compare ("mumps", "")),
   ?assertEqual (0, compare ("", "")),
   ?assertEqual (0, compare ("idea", "aedi")),
+
+  ok.
+
+group_by_test () ->
+
+  R1 = [{0,[4,8,12,16]},
+        {3,[3,7,11,15]},
+        {2,[2,6,10,14,18]},
+        {1,[1,5,9,13,17]}],
+  KeyFun1 = fun (X) -> X rem 4 end,
+  List1 = lists:seq (1, 18),
+  ?assertEqual (R1, group_by (KeyFun1, List1)),
 
   ok.
 
