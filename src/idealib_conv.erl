@@ -17,7 +17,9 @@
 
   int2float0/1, int2float/2,
 
-  bool2str/1, bool2str/2, bool2str0/1, bool2str1/1
+  bool2str/1, bool2str/2, bool2str0/1, bool2str1/1,
+
+  bits2int/1, bitstring2int/1
 ]).
 
 %% XXX: Are we Unicode ready? NO! :-(
@@ -224,6 +226,19 @@ int2float0 (X) -> int2float (X, 0.0).
 int2float (X, _) when is_integer (X) -> X+0.0;  %% trick :)
 int2float (_, D) -> D.
 
+%% @doc Alias for `bitstring2int/0'.
+bits2int (Bits) -> bitstring2int (Bits).
+
+%% @doc Convert a list of bits into a valid integer.
+%% The list length must be divisible by eight.
+bitstring2int (Bits) ->
+    bitstring2int_ (Bits, 0).
+
+bitstring2int_ ([], Acc) -> Acc;
+bitstring2int_ ([X8, X7, X6, X5, X4, X3, X2, X1 | T], Acc) ->
+    X = (X8 bsl 7) bor (X7 bsl 6) bor (X6 bsl 5) bor (X5 bsl 4) bor
+        (X4 bsl 3) bor (X3 bsl 2) bor (X2 bsl 1) bor X1,
+    bitstring2int_ (T, X bor (Acc bsl 8)).
 
 %% EUnit Tests
 -ifdef (TEST).
@@ -396,6 +411,24 @@ int2float_test () ->
   ?assertEqual (error, int2float ([], error)),
   ?assertEqual (1.0, int2float (1, error)),
   ?assertEqual (error, int2float (1.0, error)),
+
+  ok.
+
+bitstring2int_test () ->
+
+  %% Basic
+  ?assertEqual (5,   bitstring2int ([0,0,0,0, 0,1,0,1])),
+  ?assertEqual (128, bitstring2int ([1,0,0,0, 0,0,0,0])),
+  ?assertEqual (133, bitstring2int ([1,0,0,0, 0,1,0,1])),
+
+  MkRand = fun (N) ->
+                   [ random:uniform (1024) rem 2
+                     || _ <- lists:seq (1, N) ]
+           end,
+  BL2I = fun (X) -> list_to_integer ([ $0+Xi || Xi <- X ], 2) end,
+
+  [ (?assertEqual (BL2I (R), bitstring2int (R)))
+    || R <- [ MkRand (4 bsl Si) || Si <- lists:seq (1, 10) ] ],
 
   ok.
 
