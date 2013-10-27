@@ -52,6 +52,8 @@ uuidv4str () ->
 %% @doc regex pattern escaper.
 re_esc ({re_pattern, _} = Pat) -> Pat;
 re_esc ([]) -> [];
+re_esc (X) when is_binary (X) ->
+  list_to_binary (re_esc (binary_to_list (X)));
 re_esc ([H|T]) when H >= $0, H =< $9; H >= $a, H =< $z; H >= $A, H =< $Z ->
   [H|re_esc (T)];
 re_esc ([H|T]) -> [$\\, H|re_esc (T)].
@@ -83,5 +85,22 @@ post_init_internal (App, Fun, TimeOut) ->
       timer:sleep (TimeOut),
       post_init_internal (App, Fun, TimeOut)
   end.
+
+
+%% EUnit Tests
+-ifdef (TEST).
+-include_lib ("eunit/include/eunit.hrl").
+
+re_esc_test () ->
+
+  %% Basic
+  ?assertEqual ("asdf", re_esc ("asdf")),
+  ?assertEqual (<<"asdf">>, re_esc (<<"asdf">>)),
+  ?assertEqual ("asdf\\&", re_esc ("asdf&")),
+  ?assertEqual (<<"asdf\\(\\@\\)">>, re_esc (<<"asdf(@)">>)),
+
+  ok.
+
+-endif.
 
 %% vim: fdm=syntax:fdn=3:tw=74:ts=2:syn=erlang
