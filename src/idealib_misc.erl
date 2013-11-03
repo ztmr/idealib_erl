@@ -8,12 +8,23 @@
 
 -module (idealib_misc).
 -export ([
+  ensure_app/1,
   uuidv4str/0,
   re_esc/1,
   get_priv_dir_item/2,
   post_init/2, post_init/3, post_init_internal/3,
   implements/2
 ]).
+
+%% @doc Ensure the `App' is running.
+-spec ensure_app (App::atom ()) -> ok | {error, any ()}.
+ensure_app (App) ->
+    case application:start (App) of
+        ok -> ok;
+        {error, {already_started, App}} -> ok;
+        {error, _} = Error -> Error;
+        WhateverError -> {error, WhateverError}
+    end.
 
 %% @doc Check if the `Module' implements `Behavior' callbacks.
 -spec implements (Module::atom (), Behavior::atom ()) -> boolean ().
