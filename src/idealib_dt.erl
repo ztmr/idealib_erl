@@ -191,11 +191,11 @@ dt2iso ({{Year, Month, Day}, {Hr, Min, Sec}}) ->
 iso2dt (IsoString) when is_list (IsoString) ->
   [D, Tz] = epiece:piece (IsoString, [$T]),
   [T, _Z] = epiece:piece (Tz, [$Z]),
-  D@ = list_to_tuple ([ idealib_conv:str2int0 (X)
-                        || X <- epiece:piece (D, [$-]) ]),
-  T@ = list_to_tuple ([ idealib_conv:str2int0 (X)
-                        || X <- epiece:piece (T, [$:]) ]),
-  {D@, T@}.
+  {DY@, DM@, DD@} = list_to_tuple ([ idealib_conv:str2int0 (X)
+                                     || X <- epiece:piece (D, [$-]) ]),
+  {TH@, TM@, TS@} = list_to_tuple ([ idealib_conv:str2int0 (X)
+                                     || X <- epiece:piece (T, [$:]) ]),
+  {{DY@, DM@, DD@}, {TH@, TM@, TS@}}.
 
 %% @doc True if DateTime `DT1' is before DateTime `DT2'.
 %% False otherwise.
@@ -253,6 +253,7 @@ dtiso_test () ->
   ?assertEqual ({{2013,1,1},{1,2,3}}, iso2dt ("2013-01-01T01:02:03Z")),
   NowDT = {date (), time ()},
   ?assertEqual (NowDT, iso2dt (dt2iso (NowDT))),
+  ?assertMatch ({'EXIT', {{badmatch, _}, _}}, catch (iso2dt (""))),
   ok.
 
 -endif.
