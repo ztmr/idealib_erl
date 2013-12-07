@@ -16,6 +16,7 @@
   x2str/1,
 
   int2float0/1, int2float/2,
+  float2str/1,
 
   bool2str/1, bool2str/2, bool2str0/1, bool2str1/1,
 
@@ -91,6 +92,8 @@ str2float (S, D) when is_list (S) ->
   end;
 str2float (_, D) -> D.
 
+float2str (X) when is_float (X) ->
+    mochinum:digits (X).
 
 %% @doc Convert value of `S' to a boolean value.
 %% If it is not possible, fall back to `false'.
