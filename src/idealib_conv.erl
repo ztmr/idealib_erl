@@ -181,9 +181,8 @@ x2str (T) when is_list (T) ->
   end;
 x2str (T) when is_atom (T) -> atom_to_list (T);
 x2str (T) when is_integer (T) -> integer_to_list (T);
-% NOTE: 256.99 -> 2.56990000000000009095e+02 (what is wrong!)
-% Let's fall all the floats to the slow and ugly io_lib/~p...
-%x2str (T) when is_float (T) -> float_to_list (T);
+x2str (T) when is_float (T) -> float2str (T);
+%% XXX: what about binaries?
 x2str (T) -> x2str_fallback (T).
 
 x2str_fallback (T) -> lists:flatten (io_lib:format ("~p", [T])).
@@ -302,6 +301,19 @@ str2float_test () ->
 
   ok.
 
+float2str_test () ->
+
+  %% Basic
+  ?assertEqual ("0.0", float2str (0.0)),
+  ?assertEqual ("1500.0", float2str (1.5e3)),
+  ?assertEqual ("123.456", float2str (123.456)),
+  ?assertEqual ("-123.456", float2str (-123.456)),
+  ?assertEqual ("-123.456", float2str (-123.45600)),
+  ?assertMatch ({'EXIT', {function_clause, _}},
+                catch (float2str (undefined))),
+
+  ok.
+
 x2bool_test () ->
 
   %% Basic
@@ -359,6 +371,7 @@ x2str_test () ->
   ?assertEqual ("0.0", x2str (0.0)),
   ?assertEqual ("123.456", x2str (123.456)),
   ?assertEqual ("-123.456", x2str (-123.456)),
+  ?assertEqual ("1500.0", x2str (1.5e3)),
   ?assertEqual ("-123.456", x2str ([$-,$1,$2,$3,$.,$4,$5,$6])),
   ?assertEqual ([283,353,269,345,382,253,225,237,233],
          x2str ([283,353,269,345,382,253,225,237,233])),
