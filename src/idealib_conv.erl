@@ -185,7 +185,7 @@ x2str (T) when is_float (T) -> float2str (T);
 %% XXX: what about binaries?
 x2str (T) -> x2str_fallback (T).
 
-x2str_fallback (T) -> lists:flatten (io_lib:format ("~p", [T])).
+x2str_fallback (T) -> lists:flatten (io_lib:format ("~w", [T])).
 
 
 %% @doc Try to convert whatever to integer.
