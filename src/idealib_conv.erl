@@ -183,6 +183,7 @@ x2str (T) when is_atom (T) -> atom_to_list (T);
 x2str (T) when is_integer (T) -> integer_to_list (T);
 x2str (T) when is_float (T) -> float2str (T);
 %% XXX: what about binaries?
+x2str (T) when is_binary (T) -> binary_to_list (T);
 x2str (T) -> x2str_fallback (T).
 
 x2str_fallback (T) -> lists:flatten (io_lib:format ("~w", [T])).
