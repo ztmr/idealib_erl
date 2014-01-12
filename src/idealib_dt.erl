@@ -53,6 +53,8 @@
   %% TODO: ISO timestamps
   %% dates library usage: shifts and ranges
 
+  str2dt/2,
+
   dt_compare/2
 ]).
 
@@ -197,6 +199,51 @@ iso2dt (IsoString) when is_list (IsoString) ->
                                      || X <- epiece:piece (T, [$:]) ]),
   {{DY@, DM@, DD@}, {TH@, TM@, TS@}}.
 
+%% Example usage:
+%%  str2dt ("08.9  . 2013", "%m.%d.%Y") -> {{2013, 9, 8}, {0, 0, 0}}
+%% XXX: we currently support only %m, %d and %Y
+%str2dt (DTString, Format) ->
+%    G = fun (Key, Props) -> proplists:get_value (Key, Props) end,
+%    X2I0 = fun idealib_conv:x2int0/1,
+%    ParseIntRangeFun =
+%        fun (Min, Max) ->
+%                fun
+%                    (X) when Min =< X andalso Max =< Max -> {ok, X};
+%                    (_) -> {error, invalid_format}
+%                end
+%        end,
+%    Handlers = [
+%                {"Y", ParseIntRangeFun (1000, 9999)},
+%                {"m", ParseIntRangeFun (1, 12)},
+%                {"D", ParseIntRangeFun (1, 31)},  %% XXX: check it in context of the month
+%                {"H", ParseIntRangeFun (0, 24)},
+%                {"M", ParseIntRangeFun (0, 59)},
+%                {"S", ParseIntRangeFun (0, 59)}
+%               ],
+%    case idealib_fmt:parse (DTString, Format, Handlers) of
+%        {ok, Res} ->
+%            {ok, {{G ("Y", Res), G ("m", Res), G ("D", Res)},
+%                  {G ("H", Res), G ("M", Res), G ("S", Res)}}};
+%        {error, _} = Error ->
+%            Error
+%    end.
+
+%% Predefined, well-known, and temporary solutions
+str2dt (DTString, cz_standard_date) ->
+    G = fun (X) ->
+                idealib_conv:x2int0 (string:strip (X))
+        end,
+    case string:tokens (DTString, ".") of
+        [D0, M0, Y0] ->
+            Y1 = G (Y0),
+            M1 = G (M0),
+            D1 = G (D0),
+            {ok, {{Y1, M1, D1}, {0, 0, 0}}};
+        _ ->
+            {error, invalid_format}
+    end.
+
+
 %% @doc True if DateTime `DT1' is before DateTime `DT2'.
 %% False otherwise.
 dt_compare (DT1, DT2) ->
@@ -255,6 +302,18 @@ dtiso_test () ->
   ?assertEqual (NowDT, iso2dt (dt2iso (NowDT))),
   ?assertMatch ({'EXIT', {{badmatch, _}, _}}, catch (iso2dt (""))),
   ok.
+
+str2dt_test () ->
+    DT = {{2013, 6, 3}, {0, 0, 0}},
+    ?assertMatch ({ok, DT},
+                  str2dt ("3.6.2013", cz_standard_date)),
+    ?assertMatch ({ok, DT},
+                  str2dt ("  3.  6.  2013  ", cz_standard_date)),
+    ?assertMatch ({ok, DT},
+                  str2dt ("03.06.2013", cz_standard_date)),
+    ?assertMatch ({ok, DT},
+                  str2dt ("  03. 06.  2013", cz_standard_date)),
+    ok.
 
 -endif.
 
