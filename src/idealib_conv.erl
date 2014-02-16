@@ -128,6 +128,7 @@ x2bool (true, _) -> true;
 x2bool ("1", _) -> true;    %% x2bool_s optimization
 x2bool ("0", _) -> false;   %% x2bool_s optimization
 x2bool (S, D) when is_list (S) -> x2bool_s (string:to_lower (S), D);
+x2bool (S, D) when is_binary (S) -> x2bool_s (string:to_lower (binary_to_list (S)), D);
 
 %% Default fallback phase 2:
 x2bool (_, D) -> D.
@@ -326,6 +327,8 @@ x2bool_test () ->
   ?assertEqual (true, x2bool (true)),
   ?assertEqual (true, x2bool ("1")),
   ?assertEqual (false, x2bool ("0")),
+  ?assertEqual (true, x2bool (<<"1">>)),
+  ?assertEqual (false, x2bool (<<"0">>)),
   ?assertEqual (false, x2bool (0.0)),
   ?assertEqual (true, x2bool (1.0)),
   ?assertEqual ({error, invalid_boolean}, x2bool (123.456)),
@@ -337,6 +340,12 @@ x2bool_test () ->
   ?assertEqual (false, x2bool ("0.0", test)),
   ?assertEqual (test, x2bool ("0.1", test)),
   ?assertEqual (test, x2bool ("whatever", test)),
+  ?assertEqual (false, x2bool (<<"N">>)),
+  ?assertEqual (true, x2bool (<<"Y">>)),
+  ?assertEqual (false, x2bool (<<"0">>, test)),
+  ?assertEqual (false, x2bool (<<"0.0">>, test)),
+  ?assertEqual (test, x2bool (<<"0.1">>, test)),
+  ?assertEqual (test, x2bool (<<"whatever">>, test)),
 
   ok.
 
