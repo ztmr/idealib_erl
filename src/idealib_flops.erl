@@ -9,16 +9,20 @@
 -define (FP_PP (X), ((X)*?FP_PRECISION)).
 -define (FP_UNPP (X), ((X)/?FP_PRECISION)).
 
+-spec add (X::float (), Y::float ()) -> float ().
 %% @doc Add two float numbers `X' and `Y'.
 add (X, Y) -> ?FP_UNPP (?FP_PP (X) + ?FP_PP (Y)).
 
+-spec subtract (X::float (), Y::float ()) -> float ().
 %% @doc Subtract two float numbers `X' and `Y'.
 subtract (X, Y) -> ?FP_UNPP (?FP_PP (X) - ?FP_PP (Y)).
 
+-spec integral (X::float ()) -> integer ().
 %% @doc Get an integral part of the float argument.
 integral (X) when is_float (X) -> erlang:trunc (X).
 
 %% @doc Get a fractional part of the float argument.
+-spec fractional (X::float ()) -> float ().
 fractional (X) when is_float (X) ->
   subtract (X, integral (X)).
 
