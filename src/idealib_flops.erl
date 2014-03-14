@@ -1,6 +1,6 @@
 -module (idealib_flops).
 -export ([
-  add/2, substract/2,
+  add/2, subtract/2,
   integral/1, fractional/1,
   round/1, round/2
 ]).
@@ -12,15 +12,15 @@
 %% @doc Add two float numbers `X' and `Y'.
 add (X, Y) -> ?FP_UNPP (?FP_PP (X) + ?FP_PP (Y)).
 
-%% @doc Substract two float numbers `X' and `Y'.
-substract (X, Y) -> ?FP_UNPP (?FP_PP (X) - ?FP_PP (Y)).
+%% @doc Subtract two float numbers `X' and `Y'.
+subtract (X, Y) -> ?FP_UNPP (?FP_PP (X) - ?FP_PP (Y)).
 
 %% @doc Get an integral part of the float argument.
 integral (X) when is_float (X) -> erlang:trunc (X).
 
 %% @doc Get a fractional part of the float argument.
 fractional (X) when is_float (X) ->
-  substract (X, integral (X)).
+  subtract (X, integral (X)).
 
 -spec round (X::float ()) -> float ().
 %% @doc Round a float->float.
