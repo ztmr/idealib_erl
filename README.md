@@ -10,5 +10,6 @@
 * `idealib_fs` (filesystem tools)
 * `idealib_lists` (lists function missing in stdlib)
 * `idealib_misc` (miscellanous functions)
+* `idealib_xml` (a simple API to deal with XML/XSD)
 * `ilog` (lager logging wrapper; deprecated)
 
