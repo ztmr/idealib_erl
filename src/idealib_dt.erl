@@ -177,27 +177,33 @@ dt2local ({{_, _, _}, {_, _, _}} = DT, Tz) ->
 now2local ({_, _, _} = Now, Tz) ->
   dt2local (now2dt (Now), Tz).
 
-dt2iso ({{Year, Month, Day}, {Hr, Min, Sec}}) ->
-  S = fun (X, L) ->
-    idealib_lists:pad (idealib_conv:x2str (X), L, $0)
-  end,
-  lists:concat ([
-    S (Year,  4), "-",
-    S (Month, 2), "-",
-    S (Day,   2), "T",
-    S (Hr,    2), ":",
-    S (Min,   2), ":",
-    S (Sec,   2), "Z" ]).
+dt2iso (DateTime) ->
+  binary_to_list (iso8601:format (DateTime)).
+
+%dt2iso ({{Year, Month, Day}, {Hr, Min, Sec}}) ->
+%  S = fun (X, L) ->
+%    idealib_lists:pad (idealib_conv:x2str (X), L, $0)
+%  end,
+%  lists:concat ([
+%    S (Year,  4), "-",
+%    S (Month, 2), "-",
+%    S (Day,   2), "T",
+%    S (Hr,    2), ":",
+%    S (Min,   2), ":",
+%    S (Sec,   2), "Z" ]).
+
+iso2dt (IsoString) when is_list (IsoString) ->
+  iso8601:parse (IsoString).
 
 %% XXX: Ignores zone!
-iso2dt (IsoString) when is_list (IsoString) ->
-  [D, Tz] = epiece:piece (IsoString, [$T]),
-  [T, _Z] = epiece:piece (Tz, [$Z]),
-  {DY@, DM@, DD@} = list_to_tuple ([ idealib_conv:str2int0 (X)
-                                     || X <- epiece:piece (D, [$-]) ]),
-  {TH@, TM@, TS@} = list_to_tuple ([ idealib_conv:str2int0 (X)
-                                     || X <- epiece:piece (T, [$:]) ]),
-  {{DY@, DM@, DD@}, {TH@, TM@, TS@}}.
+%iso2dt (IsoString) when is_list (IsoString) ->
+%  [D, Tz] = epiece:piece (IsoString, [$T]),
+%  [T, _Z] = epiece:piece (Tz, [$Z]),
+%  {DY@, DM@, DD@} = list_to_tuple ([ idealib_conv:str2int0 (X)
+%                                     || X <- epiece:piece (D, [$-]) ]),
+%  {TH@, TM@, TS@} = list_to_tuple ([ idealib_conv:str2int0 (X)
+%                                     || X <- epiece:piece (T, [$:]) ]),
+%  {{DY@, DM@, DD@}, {TH@, TM@, TS@}}.
 
 %% Example usage:
 %%  str2dt ("08.9  . 2013", "%m.%d.%Y") -> {{2013, 9, 8}, {0, 0, 0}}
@@ -300,7 +306,7 @@ dtiso_test () ->
   ?assertEqual ({{2013,1,1},{1,2,3}}, iso2dt ("2013-01-01T01:02:03Z")),
   NowDT = {date (), time ()},
   ?assertEqual (NowDT, iso2dt (dt2iso (NowDT))),
-  ?assertMatch ({'EXIT', {{badmatch, _}, _}}, catch (iso2dt (""))),
+  ?assertMatch ({'EXIT', _}, catch (iso2dt (""))),
   ok.
 
 str2dt_test () ->
