@@ -17,6 +17,8 @@ piece (S, D, F) when is_list (S) ->
   idealib_lists:xzip (F, piece (S, D)).
 
 piece_implementation ([], _) -> [];
+piece_implementation (S, []) ->
+  [ [Si] || Si <- S ];
 piece_implementation (S, [D]) ->
   epz_ (S, D, [], []);
 piece_implementation (S, D) ->
@@ -69,6 +71,10 @@ piece_test () ->
   ?assertEqual (X1, piece (R, Delim)),
   ?assertEqual (X2, piece (R, Delim, F)),
 
+  ok.
+
+empty_delimiter_test () ->
+  ?assertEqual (["a", "b", "c"], piece ("abc", "")),
   ok.
 
 known_nif_segfault_test () ->
