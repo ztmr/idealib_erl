@@ -93,7 +93,7 @@ str2float (S, D) when is_list (S) ->
 str2float (_, D) -> D.
 
 float2str (X) when is_float (X) ->
-    mochinum:digits (X).
+    idealib_num:digits (X).
 
 %% @doc Convert value of `S' to a boolean value.
 %% If it is not possible, fall back to `false'.
