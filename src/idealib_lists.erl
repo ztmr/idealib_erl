@@ -9,7 +9,7 @@
 -module (idealib_lists).
 -export ([
   pad/3, lpad/3, rpad/3,
-  xzip/2,
+  xzip/2, firstn/2,
   compare/2,
   group_by/2,
   index_of/2,
@@ -43,6 +43,17 @@ xzip ([], _, Acc) -> Acc;
 xzip (_, [], Acc) -> Acc;
 xzip ([H1|T1], [H2|T2], Acc) ->
   xzip (T1, T2, [{H1, H2}|Acc]).
+
+%% @doc Take first N items in the list.
+firstn (L, N) ->
+  firstn (L, N, []).
+
+firstn ([], _, Acc) ->
+  lists:reverse (Acc);
+firstn (_, N, Acc) when N =< 0 ->
+  firstn ([], N, Acc);
+firstn ([H|T], N, Acc) ->
+  firstn (T, N-1, [H|Acc]).
 
 %% @doc Return the length of the longest common prefix.
 compare (L1, L2) -> compare (L1, L2, 0).
@@ -171,6 +182,16 @@ group_by_test () ->
   ?assertEqual (R1, group_by (KeyFun1, List1)),
 
   ok.
+
+firstn_test () ->
+
+    ?assertEqual ([1,2,3], firstn ([1,2,3],  3)),
+    ?assertEqual ([1,2,3], firstn ([1,2,3],  9)),
+    ?assertEqual ([1,2],   firstn ([1,2,3],  2)),
+    ?assertEqual ([],      firstn ([1,2,3],  0)),
+    ?assertEqual ([],      firstn ([1,2,3], -1)),
+
+    ok.
 
 -endif.
 
