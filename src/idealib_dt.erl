@@ -141,14 +141,18 @@ gsec2horolog (S) when is_integer (S) ->
   {HoroSec div DaySec, HoroSec rem DaySec}.
 
 %% @doc Convert MUMPS $Horolog to gregorian seconds.
-%% For $H="62959,49838", we accept {62959, 49838} or "62959,49838".
-horolog2gsec ({HD,HS}) ->
+%% For $H="62959,49838", we accept {62959, 49838}, "62959,49838",
+%% or 62959, or "62959".
+horolog2gsec ({HD, HS}) when is_number (HD), is_number (HS) ->
   DaySec = days2sec (1),
   epoch2gsec (mumps) + HD*DaySec + HS;
+horolog2gsec (HD) when is_number (HD) ->
+  horolog2gsec ({HD, 0});
 horolog2gsec (H) when is_list (H) ->
   S2I = fun idealib_conv:str2int0/1,
   case epiece:piece (H, ",") of
     [HD, HS] -> horolog2gsec ({S2I (HD), S2I (HS)});
+    [HD]     -> horolog2gsec (S2I (HD));
     _        -> 0
   end.
 
@@ -284,13 +288,15 @@ horolog_test () ->
   GSecs = round (now2us ({1,1,0}) / 1000000) - epoch2gsec (unix),
   DaySecs = idealib_dt:days2sec (1),
   Horo1 = "62959,50058", Horo2 = {62959, 50058},
-  DT = {{2013,5,17}, {13,54,18}},
+  DThd = {2013,5,17}, DT = {DThd, {13,54,18}},
   ?assertEqual (epoch2gsec (mumps), horolog2gsec ({0,0})),
   ?assertEqual (epoch2gsec (mumps)+60, horolog2gsec ({0,60})),
   ?assertEqual (epoch2gsec (mumps)+DaySecs, horolog2gsec ({1,0})),
   ?assertEqual (GSecs, horolog2gsec (gsec2horolog (GSecs))),
   ?assertEqual (DT, horolog2dt (Horo1)),
   ?assertEqual (DT, horolog2dt (Horo2)),
+  ?assertEqual ({DThd, {0,0,0}}, horolog2dt (element (1, Horo2))),
+  ?assertEqual ({DThd, {0,0,0}}, horolog2dt (idealib_conv:x2str (element (1, Horo2)))),
   ?assertEqual (Horo1, horolog2str (Horo2)),
   ?assertEqual (Horo1, dt2horologstr (DT)),
   ok.
