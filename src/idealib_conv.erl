@@ -44,6 +44,8 @@ str2int (S) -> str2int (S, {error, invalid_integer}).
 %% is the penalty?
 str2int ([], D) -> D;
 str2int (S, _) when is_integer (S) -> S;
+str2int (S, D) when is_binary (S) ->
+  str2int (binary_to_list (S), D);
 str2int (S, D) when is_list (S) ->
   % NOTE: what's the difference between
   % string:to_integer and erlang:list_to_integer?
@@ -78,6 +80,8 @@ str2float (S) -> str2float (S, {error, invalid_float}).
 %% FP separator equivalent to the dot character.
 str2float ([], D) -> D;
 str2float (S, _) when is_float (S) -> S;
+str2float (S, D) when is_binary (S) ->
+  str2float (binary_to_list (S), D);
 str2float ([$.|S], D) -> str2float ([$0,$.|S], D);
 str2float ([$-,$.|S], D) -> str2float ([$-,$0,$.|S], D);
 str2float ([$+,$.|S], D) -> str2float ([$0,$.|S], D);
@@ -255,6 +259,7 @@ str2int_test () ->
   ?assertEqual (123, str2int ("123", error)),
   ?assertEqual (-123, str2int ("-123", error)),
   ?assertEqual (-123, str2int ("-123", error)),
+  ?assertEqual (-123, str2int (<<"-123">>, error)),
   ?assertEqual (-123, str2int ([$-,$1,$2,$3], error)),
 
   %% Get only the number on the beginning of the string
@@ -264,11 +269,16 @@ str2int_test () ->
   %% Errors due to non-integer string content
   ?assertEqual (error, str2int ("a123", error)),
   ?assertEqual (error, str2int ("akdfs", error)),
+  ?assertEqual (error, str2int (<<"akdfs">>, error)),
 
   %% Errors due to non-string argument
   ?assertEqual (error, str2int ([1,2,3,4], error)),
+  ?assertEqual (error, str2int (<<1,2,3,4>>, error)),
   ?assertEqual (error, str2int ({"123"}, error)),
   ?assertEqual (error, str2int ({-123}, error)),
+
+  ?assertEqual (1234, str2int ([ $0+N || N <- [1,2,3,4] ], error)),
+  ?assertEqual (1234, str2int (<< <<($0+N)>> || N <- [1,2,3,4] >>, error)),
 
   ok.
 
@@ -276,6 +286,7 @@ str2float_test () ->
 
   %% Basic
   ?assertEqual (0.0, str2float ("0.0", error)),
+  ?assertEqual (0.0, str2float (<<"0.0">>, error)),
   ?assertEqual (123.456, str2float ("123.456", error)),
   ?assertEqual (-123.456, str2float ("-123.456", error)),
   ?assertEqual (-123.456, str2float ("-123.456", error)),

@@ -148,6 +148,8 @@ horolog2gsec ({HD, HS}) when is_number (HD), is_number (HS) ->
   epoch2gsec (mumps) + HD*DaySec + HS;
 horolog2gsec (HD) when is_number (HD) ->
   horolog2gsec ({HD, 0});
+horolog2gsec (H) when is_binary (H) ->
+  horolog2gsec (binary_to_list (H));
 horolog2gsec (H) when is_list (H) ->
   S2I = fun idealib_conv:str2int0/1,
   case epiece:piece (H, ",") of
@@ -196,6 +198,8 @@ dt2iso (DateTime) ->
 %    S (Min,   2), ":",
 %    S (Sec,   2), "Z" ]).
 
+iso2dt (IsoBinary) when is_binary (IsoBinary) ->
+  iso2dt (binary_to_list (IsoBinary));
 iso2dt (IsoString) when is_list (IsoString) ->
   iso8601:parse (IsoString).
 
@@ -239,7 +243,9 @@ iso2dt (IsoString) when is_list (IsoString) ->
 %    end.
 
 %% Predefined, well-known, and temporary solutions
-str2dt (DTString, cz_standard_date) ->
+str2dt (DTBinary, Fmt) when is_binary (DTBinary) ->
+  str2dt (binary_to_list (DTBinary), Fmt);
+str2dt (DTString, cz_standard_date) when is_list (DTString) ->
     G = fun (X) ->
                 idealib_conv:x2int0 (string:strip (X))
         end,
@@ -294,6 +300,7 @@ horolog_test () ->
   ?assertEqual (epoch2gsec (mumps)+DaySecs, horolog2gsec ({1,0})),
   ?assertEqual (GSecs, horolog2gsec (gsec2horolog (GSecs))),
   ?assertEqual (DT, horolog2dt (Horo1)),
+  ?assertEqual (DT, horolog2dt (list_to_binary (Horo1))),
   ?assertEqual (DT, horolog2dt (Horo2)),
   ?assertEqual ({DThd, {0,0,0}}, horolog2dt (element (1, Horo2))),
   ?assertEqual ({DThd, {0,0,0}}, horolog2dt (idealib_conv:x2str (element (1, Horo2)))),
@@ -310,6 +317,7 @@ epoch_test () ->
 dtiso_test () ->
   ?assertEqual ("2013-01-01T01:02:03Z", dt2iso ({{2013,1,1},{1,2,3}})),
   ?assertEqual ({{2013,1,1},{1,2,3}}, iso2dt ("2013-01-01T01:02:03Z")),
+  ?assertEqual ({{2013,1,1},{1,2,3}}, iso2dt (<<"2013-01-01T01:02:03Z">>)),
   NowDT = {date (), time ()},
   ?assertEqual (NowDT, iso2dt (dt2iso (NowDT))),
   ?assertMatch ({'EXIT', _}, catch (iso2dt (""))),
@@ -325,6 +333,8 @@ str2dt_test () ->
                   str2dt ("03.06.2013", cz_standard_date)),
     ?assertMatch ({ok, DT},
                   str2dt ("  03. 06.  2013", cz_standard_date)),
+    ?assertMatch ({ok, DT},
+                  str2dt (<<"  03. 06.  2013">>, cz_standard_date)),
     ok.
 
 -endif.
