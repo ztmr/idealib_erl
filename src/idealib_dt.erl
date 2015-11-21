@@ -24,7 +24,7 @@
 %% the information on anything smaller than a single second.
 %% So, for example:
 %% ```
-%% erl> N = now ().              
+%% erl> N = erlang:timestamp ().
 %% {1368,803088,971319}
 %% erl> X = idealib_dt:now2us (N).
 %% 1368803088971319
@@ -61,28 +61,28 @@
 -include_lib ("tz_database.hrl").
 
 
-%% @doc Convert erlang:now () to microseconds integer.
+%% @doc Convert erlang:timestamp () to microseconds integer.
 %% Since the argument is not supplied, default is
-%% erlang:now () of the time when this function was called.
-now2us () -> now2us (erlang:now ()).
+%% erlang:timestamp () of the time when this function was called.
+now2us () -> now2us (erlang:timestamp ()).
 
-%% @doc Convert erlang:now () to microseconds integer.
+%% @doc Convert erlang:timestamp () to microseconds integer.
 now2us ({MegaSecs, Secs, MicroSecs}) ->
   (MegaSecs*1000000 + Secs)*1000000 + MicroSecs.
 
-%% @doc Convert microseconds integer back to erlang:now () format.
+%% @doc Convert microseconds integer back to erlang:timestamp () format.
 us2now (Ms) when is_integer (Ms) ->
   X = Ms div 1000000, MicroSecs = Ms rem 1000000,
   Secs = X rem 1000000, MegaSecs = X div 1000000,
   {MegaSecs, Secs, MicroSecs}.
 
-%% @doc Convert erlang:now () to {date (), time ()}.
-%% Use current value of erlang:now ().
+%% @doc Convert erlang:timestamp () to {date (), time ()}.
+%% Use current value of erlang:timestamp ().
 %% WARNING: this is one-way function since it looses
 %% information (datetime is based on number of seconds)!
-now2dt () -> now2dt (now ()).
+now2dt () -> now2dt (erlang:timestamp ()).
 
-%% @doc Convert erlang:now () to {date (), time ()}.
+%% @doc Convert erlang:timestamp () to {date (), time ()}.
 %% WARNING: this is one-way function since it looses
 %% information (datetime is based on number of seconds)!
 now2dt ({_, _, _} = Now) ->
@@ -93,7 +93,7 @@ now2dt ({_, _, _} = Now) ->
 %% information (datetime is based on number of seconds)!
 us2dt (Ms) -> now2dt (us2now (Ms)).
 
-%% @doc Convert a datetime to erlang:now format.
+%% @doc Convert a datetime to erlang:timestamp format.
 dt2now ({{_,_,_}, {_,_,_}} = DT) ->
   GregSec = calendar:datetime_to_gregorian_seconds (DT),
   Sec = GregSec - epoch2gsec (unix),
@@ -121,7 +121,7 @@ sec2us (S) when is_integer (S) ->
 %% @doc Convert number of days to seconds.
 days2sec (D) when is_integer (D) -> D*86400.
 
-%% @doc Convert gregorian seconds to erlang:now format.
+%% @doc Convert gregorian seconds to erlang:timestamp format.
 gsec2now (S) when is_integer (S) ->
   us2now (sec2us (S - epoch2gsec (unix))).
 
@@ -177,7 +177,7 @@ dt2local ({{_, _, _}, {_, _, _}} = DT, Tz) ->
     WithTz     -> WithTz
   end.
 
-%% @doc Convert erlang:now () to DateTime with TimeZone.
+%% @doc Convert erlang:timestamp () to DateTime with TimeZone.
 %% WARNING: this is one-way function since it looses
 %% information (datetime is based on number of seconds)!
 now2local ({_, _, _} = Now, Tz) ->
@@ -272,7 +272,7 @@ dt_compare (DT1, DT2) ->
 
 common_test () ->
   %% Basic
-  {N0,N1,N2} = Now = now (), R = random:uniform (N0+N1+N2),
+  {N0,N1,N2} = Now = erlang:timestamp (), R = random:uniform (N0+N1+N2),
   DT = now2dt (Now), DTSec = dt2gsec (DT),
   ?assertEqual (Now, us2now (now2us (Now))),
   ?assertEqual ({N0,N1,0}, dt2now (now2dt (Now))),
